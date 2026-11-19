@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Business {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  logoUrl     String?
+  contactPhone String?
+  contactEmail String?
+  websiteUrl  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  admins      BusinessAdmin[]
+  links       ActionLink[]
+  views       PageView[]
+  clicks      LinkClick[]
+}
+
+model BusinessAdmin {
+  id           String   @id @default(cuid())
+  businessId   String
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+  business     Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
+model ActionLink {
+  id          String   @id @default(cuid())
+  businessId  String
+  label       String
+  url         String
+  position    Int      @default(0)
+  enabled     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  clicks      LinkClick[]
+
+  @@index([businessId, position])
+}
+
+model PageView {
+  id         String   @id @default(cuid())
+  businessId String
+  createdAt  DateTime @default(now())
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId, createdAt])
+}
+
+model LinkClick {
+  id         String   @id @default(cuid())
+  businessId String
+  linkId     String
+  createdAt  DateTime @default(now())
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  link       ActionLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@index([businessId, createdAt])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  businessId String?
+  action     String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+}
